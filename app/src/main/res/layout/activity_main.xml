@@ -41,10 +41,11 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Send Report via SMS(Work in Progress)"
+        android:text="Send Report via SMS"
         android:id="@+id/bSendReportSMS"
         android:background="@drawable/buttonbackground"
-        android:layout_margin="8dp"/>
+        android:layout_margin="8dp"
+        android:textColor="@color/md_white_1000"/>
 
     <Button
         android:layout_width="match_parent"
@@ -52,7 +53,8 @@
         android:text="Send report via Internet"
         android:id="@+id/bSendReportInternet"
         android:background="@drawable/buttonbackground"
-        android:layout_margin="8dp"/>
+        android:layout_margin="8dp"
+        android:textColor="@color/md_white_1000"/>
 
         </LinearLayout>
 

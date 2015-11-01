@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.os.StrictMode;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
@@ -38,8 +39,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
     EditText etCrimeDetails;
     TextView tvLocation;
     double latitude, longitude;
-    String Type, street, imei;
     String[] items = new String[]{"Theft", "Rape", "Accident", "Murder"};
+    String street, imei;
+    String Type=items[0];
     String GoogleGeoCodingAPI="AIzaSyBuYPePPAf_rmP5lsd4D0HR2JUAj87oZQo";
     SharedPreferences preferences = null;
     Toolbar toolbar;
@@ -74,19 +76,21 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
     private void sendReport() throws IOException {
         bSendReportInternet = (Button) findViewById(R.id.bSendReportInternet);
         bSendReportSMS = (Button) findViewById(R.id.bSendReportSMS);
-        final String textMessage = Type + "," + latitude + "," + longitude + "," + etCrimeDetails.getText().toString();
+        System.out.println();
         bSendReportSMS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SmsManager.getDefault().sendTextMessage("+919243422233", null, textMessage, null, null);
+                final String textMessage = Type + "," + etCrimeDetails.getText().toString() + "," + latitude + "," + longitude + "," + imei;
+                System.out.println(textMessage);
+                SmsManager.getDefault().sendTextMessage("+919248066655", null, textMessage, null, null);
                 Toast.makeText(MainActivity.this, "Sending text Message", Toast.LENGTH_SHORT).show();
             }
         });
-
         bSendReportInternet = (Button) findViewById(R.id.bSendReportInternet);
         bSendReportInternet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "Sending Message", Toast.LENGTH_SHORT).show();
                 sendData();
             }
         });
@@ -94,7 +98,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
 
     private void sendData() {
 
-        String k=null;
+        String k="1234";
         try {
             k = sendDataToServer("http://e414646b.ngrok.io//hack/AndroidConnectingToPhpMySQL/android/create_product.php");
         } catch (IOException e) {
@@ -102,16 +106,26 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
         }
         System.out.println(k);
         pid=Integer.parseInt(String.valueOf(k.charAt(4)))*10+Integer.parseInt(String.valueOf(k.charAt(5)));
-        Toast.makeText(MainActivity.this,"Your complain has been registered. Your complaint no. is " + pid,Toast.LENGTH_LONG).show();
+        //Toast.makeText(MainActivity.this,"Your complain has been registered. Your complaint no. is " + pid,Toast.LENGTH_LONG).show();
+        showDialog();
         System.out.println(pid);
         saveData();
+    }
+
+    private void showDialog() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Response");
+        builder.setMessage("Your complain has been registered. Your complaint no. is " + pid);
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 
     private void saveData() {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString("Type",Type);
         editor.putString("detail", etCrimeDetails.getText().toString());
-        editor.putString("street",street);
+        editor.putString("street", street);
         System.out.println(street);
         editor.putString("imei", imei);
         editor.putInt("pid", pid);
@@ -125,7 +139,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
         params.put("imei", imei);
         params.put("detail", etCrimeDetails.getText().toString());
         params.put("street", street);
-        String q="abc";
+        String q="1234";
         try {
             q=req.preparePost().withData(params).sendAndReadJSON().toString();
         } catch (JSONException e) {
@@ -138,10 +152,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
     private void geoLocation() {
         GPSTracker gps = new GPSTracker(this);
         if(gps.canGetLocation()){
-            latitude = gps.getLatitude()+25.68161;
-            longitude = gps.getLongitude()+26.9879;
+            latitude = gps.getLatitude();
+            longitude = gps.getLongitude();
+            //Toast.makeText(MainActivity.this,latitude+" "+longitude,Toast.LENGTH_LONG).show();
             String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+ Double.toString(latitude)+","+Double.toString(longitude)+"&key="+GoogleGeoCodingAPI;
-            String loc = "Surat, Gujarat";
+            String loc = "abc";
             HttpRequest httpRequest = null;
             try {
                 httpRequest = new HttpRequest(url);
@@ -155,6 +170,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
                 JSONObject jsonObject = new JSONObject(loc);
                 JSONArray geoData = jsonObject.getJSONArray("results");
                 int n = geoData.length();
+                if(n==0)
+                    loc = "Surat, Gujarat";
                 for(int i =0;i<n;i++){
                     loc=geoData.getJSONObject(i).getString("formatted_address");
                     break;
@@ -193,18 +210,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
 
     private void drawer() {
         toolbar = (Toolbar) findViewById(R.id.tb);
-        toolbar.setTitle("Crime Connect");
+        toolbar.setTitle("Apraadh");
         PrimaryDrawerItem item1 = new PrimaryDrawerItem().withName("Register Crime");
         PrimaryDrawerItem item2 = new PrimaryDrawerItem().withName("Check Status");
-        PrimaryDrawerItem item3 = new PrimaryDrawerItem().withName("SOS");
-        PrimaryDrawerItem item4 = new PrimaryDrawerItem().withName("Exit");
+        PrimaryDrawerItem item3 = new PrimaryDrawerItem().withName("Exit");
         AccountHeader headerResult = new AccountHeaderBuilder()
                 .withActivity(this)
                 .withHeaderBackground(R.drawable.drawerbackground).build();
 
 
 
-        Drawer result = new DrawerBuilder().withToolbar(toolbar).withAccountHeader(headerResult).withActivity(MainActivity.this).addDrawerItems(item1, item2, item3, item4).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+        Drawer result = new DrawerBuilder().withToolbar(toolbar).withAccountHeader(headerResult).withActivity(MainActivity.this).addDrawerItems(item1, item2, item3).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
             @Override
             public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
                 switch (i) {
@@ -214,9 +230,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
                         checkStatus();
                         break;
                     case 3:
-                        //
-                        break;
-                    case 4:
                         finish();
                         break;
                 }

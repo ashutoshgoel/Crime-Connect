@@ -53,7 +53,20 @@ public class checkStatus extends Activity{
         } catch (IOException e) {
             e.printStackTrace();
         }
-        status = String.valueOf(status.charAt(11));
+        status = String.valueOf(status.charAt(12));
+        switch(Integer.parseInt(status)){
+            case 0:
+                status="Complain made";
+                break;
+
+            case 1:
+                status="Complain under process";
+                break;
+
+            case 2:
+                status="Complain Resolved";
+                break;
+        }
         tvStatus.setText(status);
     }
 }

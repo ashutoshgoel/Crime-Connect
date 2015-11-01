@@ -1,74 +1,59 @@
 package com.scp.abc;
 
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Looper;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.StrictMode;
-import android.provider.Settings;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.telecom.TelecomManager;
+import android.preference.PreferenceManager;
+import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.mikepenz.materialdrawer.AccountHeader;
+import com.mikepenz.materialdrawer.AccountHeaderBuilder;
+import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
-import com.shehabic.droppy.DroppyClickCallbackInterface;
-import com.shehabic.droppy.DroppyMenuItem;
-import com.shehabic.droppy.DroppyMenuPopup;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.concurrent.TimeUnit;
+import java.net.MalformedURLException;
+import java.util.HashMap;
 
-import javax.net.ssl.HttpsURLConnection;
+public class MainActivity extends Activity implements AdapterView.OnItemSelectedListener {
 
-public class MainActivity extends Activity {
-
-    Button bTypeCrime, bSendReportSMS, bSendReportInternet;
+    Spinner bTypeOfCrime;
+    Button bSendReportSMS, bSendReportInternet;
     EditText etCrimeDetails;
     TextView tvLocation;
     double latitude, longitude;
     String Type, street, imei;
-
+    String[] items = new String[]{"Theft", "Rape", "Accident", "Murder"};
+    String GoogleGeoCodingAPI="AIzaSyBuYPePPAf_rmP5lsd4D0HR2JUAj87oZQo";
+    SharedPreferences preferences = null;
+    Toolbar toolbar;
+    int pid=0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        preferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         if (android.os.Build.VERSION.SDK_INT > 9) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
+        drawer();
         dropDownMenu();
         crimeDetails();
         geoLocation();
@@ -79,8 +64,6 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        new DrawerBuilder().withActivity(this).build();
     }
 
     private void getIMEI() {
@@ -95,56 +78,93 @@ public class MainActivity extends Activity {
         bSendReportSMS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SmsManager.getDefault().sendTextMessage("Phone Number", null, textMessage, null, null);
+                SmsManager.getDefault().sendTextMessage("+919243422233", null, textMessage, null, null);
                 Toast.makeText(MainActivity.this, "Sending text Message", Toast.LENGTH_SHORT).show();
             }
         });
 
-        JSONObject jsonObject = new JSONObject();
+        bSendReportInternet = (Button) findViewById(R.id.bSendReportInternet);
+        bSendReportInternet.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendData();
+            }
+        });
+    }
+
+    private void sendData() {
+
+        String k=null;
         try {
-            jsonObject.put("type",Type);
-            jsonObject.put("street",street);
-            jsonObject.put("imei",imei);
-            jsonObject.put("detail",etCrimeDetails.getText().toString());
+            k = sendDataToServer("http://e414646b.ngrok.io//hack/AndroidConnectingToPhpMySQL/android/create_product.php");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(k);
+        pid=Integer.parseInt(String.valueOf(k.charAt(4)))*10+Integer.parseInt(String.valueOf(k.charAt(5)));
+        Toast.makeText(MainActivity.this,"Your complain has been registered. Your complaint no. is " + pid,Toast.LENGTH_LONG).show();
+        System.out.println(pid);
+        saveData();
+    }
+
+    private void saveData() {
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("Type",Type);
+        editor.putString("detail", etCrimeDetails.getText().toString());
+        editor.putString("street",street);
+        System.out.println(street);
+        editor.putString("imei", imei);
+        editor.putInt("pid", pid);
+        editor.apply();
+    }
+
+    private String sendDataToServer(String url) throws IOException{
+        HttpRequest req = new HttpRequest(url);
+        HashMap<String, String>params=new HashMap<>();
+        params.put("type", Type);
+        params.put("imei", imei);
+        params.put("detail", etCrimeDetails.getText().toString());
+        params.put("street", street);
+        String q="abc";
+        try {
+            q=req.preparePost().withData(params).sendAndReadJSON().toString();
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.put(jsonObject);
-        System.out.println(jsonObject.toString());
-        String k = sendDataToServer("http://192.168.247.102/hack/AndroidConnectingToPhpMySQL/android/create_product.php", jsonArray.toString());
-        System.out.println(k);
-    }
-
-    private String sendDataToServer(String url, String data) throws IOException{
-
-
-        final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-        OkHttpClient client = new OkHttpClient();
-        client.setConnectTimeout(5, TimeUnit.MINUTES);
-        client.setReadTimeout(5,TimeUnit.MINUTES);
-        RequestBody body = RequestBody.create(JSON, data);
-        Request request = new Request.Builder()
-                .url(url)
-                .post(body)
-                .build();
-        Response response = client.newCall(request).execute();
-        return response.body().string();
-
+        return q;
     }
 
 
     private void geoLocation() {
         GPSTracker gps = new GPSTracker(this);
         if(gps.canGetLocation()){
-            latitude = gps.getLatitude();
-            longitude = gps.getLongitude();
-            String loc = "abc";
+            latitude = gps.getLatitude()+25.68161;
+            longitude = gps.getLongitude()+26.9879;
+            String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+ Double.toString(latitude)+","+Double.toString(longitude)+"&key="+GoogleGeoCodingAPI;
+            String loc = "Surat, Gujarat";
+            HttpRequest httpRequest = null;
+            try {
+                httpRequest = new HttpRequest(url);
+                loc = httpRequest.prepare().sendAndReadString();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                JSONObject jsonObject = new JSONObject(loc);
+                JSONArray geoData = jsonObject.getJSONArray("results");
+                int n = geoData.length();
+                for(int i =0;i<n;i++){
+                    loc=geoData.getJSONObject(i).getString("formatted_address");
+                    break;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            street = loc;
             tvLocation = (TextView) findViewById(R.id.tvLocation);
             tvLocation.setText(loc);
-            street = loc;
         }else{
             gps.showSettingsAlert();
         }
@@ -152,30 +172,72 @@ public class MainActivity extends Activity {
 
     private void crimeDetails() {
         etCrimeDetails = (EditText) findViewById(R.id.etCrimeDetails);
-        //Send the details
+    }
+
+    private void dropDownMenu(){
+        bTypeOfCrime = (Spinner) findViewById(R.id.bTypeCrime);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, items);
+        bTypeOfCrime.setAdapter(adapter);
+        bTypeOfCrime.setOnItemSelectedListener(this);
     }
 
 
-    private void dropDownMenu(){
-        bTypeCrime = (Button) findViewById(R.id.bTypeCrime);
-        final DroppyMenuPopup.Builder droppyBuilder = new DroppyMenuPopup.Builder(MainActivity.this, bTypeCrime);
-        droppyBuilder.addMenuItem(new DroppyMenuItem("Theft"))
-                .addMenuItem(new DroppyMenuItem("Rape"))
-                .addMenuItem(new DroppyMenuItem("Accident"))
-                .addMenuItem(new DroppyMenuItem("Murder"))
-                .addSeparator();
-        final DroppyMenuPopup droppyMenu = droppyBuilder.build();
-        bTypeCrime.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Type = items[position].toLowerCase();
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+    }
+
+    private void drawer() {
+        toolbar = (Toolbar) findViewById(R.id.tb);
+        toolbar.setTitle("Crime Connect");
+        PrimaryDrawerItem item1 = new PrimaryDrawerItem().withName("Register Crime");
+        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withName("Check Status");
+        PrimaryDrawerItem item3 = new PrimaryDrawerItem().withName("SOS");
+        PrimaryDrawerItem item4 = new PrimaryDrawerItem().withName("Exit");
+        AccountHeader headerResult = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withHeaderBackground(R.drawable.drawerbackground).build();
+
+
+
+        Drawer result = new DrawerBuilder().withToolbar(toolbar).withAccountHeader(headerResult).withActivity(MainActivity.this).addDrawerItems(item1, item2, item3, item4).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
             @Override
-            public void onClick(View v) {
-                droppyMenu.show();
+            public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
+                switch (i) {
+                    case 1:
+                        return false;
+                    case 2:
+                        checkStatus();
+                        break;
+                    case 3:
+                        //
+                        break;
+                    case 4:
+                        finish();
+                        break;
+                }
+                return false;
             }
-        });
-        droppyBuilder.setOnClick(new DroppyClickCallbackInterface() {
-            @Override
-            public void call(View view, int i) {
-                Type = String.valueOf(i);
-            }
-        });
+        }).build();
+
+    }
+
+    private void checkStatus() {
+        Intent intent = new Intent(MainActivity.this,checkStatus.class);
+        String typePass = preferences.getString("Type","null");
+        String detailPass = preferences.getString("detail","null");
+        String imeiPass = preferences.getString("imei","null");
+        int pidPass = preferences.getInt("pid", -1);
+        intent.putExtra("Type",typePass);
+        intent.putExtra("detail",detailPass);
+        intent.putExtra("street",street);
+        intent.putExtra("imei",imeiPass);
+        intent.putExtra("pid",pidPass);
+        startActivity(intent);
+
     }
 }

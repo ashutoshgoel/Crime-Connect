@@ -2,14 +2,27 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+    android:background="@drawable/background">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <Button
+    <android.support.v7.widget.Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:id="@+id/tb"
+        android:layout_alignParentTop="true"/>
+
+    <Spinner
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bTypeCrime"
-        android:text="Type Of Crime"/>
+        android:text="Type Of Crime"
+        android:spinnerMode="dropdown"/>
 
     <EditText
         android:layout_width="match_parent"
@@ -21,18 +34,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/tvLocation"
-        android:hint="Fetching your location"/>
+        android:hint="Fetching your location"
+        android:textStyle="bold"
+        android:textSize="16dp"/>
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Send Report via SMS"
-        android:id="@+id/bSendReportSMS"/>
+        android:text="Send Report via SMS(Work in Progress)"
+        android:id="@+id/bSendReportSMS"
+        android:background="@drawable/buttonbackground"
+        android:layout_margin="8dp"/>
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Send report via Internet"
-        android:id="@+id/bSendReportInternet"/>
+        android:id="@+id/bSendReportInternet"
+        android:background="@drawable/buttonbackground"
+        android:layout_margin="8dp"/>
+
+        </LinearLayout>
 
 </LinearLayout>
